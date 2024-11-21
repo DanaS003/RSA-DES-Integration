@@ -32,50 +32,72 @@ def main():
 
     # Fetch keys from PKA server
     responder_private_key = fetch_key_from_pka("responder_private")
-    
+    print(f"Responder private key: {responder_private_key}")
+
     initiator_public_key = fetch_key_from_pka("initiator_public")
+    print(f"Initiator public key: {initiator_public_key}")
+    
+    print()
 
     # Receive encrypted n1 message from initiator
-    encrypted_n1 = conn.recv(1024)
-    encrypted_n1 = encrypted_n1.decode('utf-8')  # Convert string back to list
-    encrypted_n1 = string_to_list(encrypted_n1)
+    encrypted_n1_msg = conn.recv(1024)
+    encrypted_n1_msg = encrypted_n1_msg.decode('utf-8')  # Convert string back to list
+    encrypted_n1_msg = string_to_list(encrypted_n1_msg)
     
-    decrypted_message = decrypt_message(encrypted_n1, responder_private_key)
-    id_a, n1 = decrypted_message.split(',')
+    print(f"Encrypted nonce 1 message received: {encrypted_n1_msg}")
+    
+    decrypted_n1_msg = decrypt_message(encrypted_n1_msg, responder_private_key)
+    id_a, n1 = decrypted_n1_msg.split(',')
+    
+    print(f"Nonce 1 message: {decrypted_n1_msg}")
+    
+    print()
 
     # Send response with N1 and N2
     n2 = generate_random_nonce()
-    response_message = f"{n1},{n2}"
-    encrypted_response = encrypt_message(response_message, initiator_public_key)
-    conn.sendall(str(encrypted_response).encode('utf-8'))
+    n1_n2_msg = f"{n1},{n2}"
+    print(f"Nonce 1 and 2 message: {n1_n2_msg}")
+    encrypted_n1_n2_msg = encrypt_message(n1_n2_msg, initiator_public_key)
+    print(f"Encrypted nonce 1 and 2 message sent: {encrypted_n1_n2_msg}")
+    conn.sendall(str(encrypted_n1_n2_msg).encode('utf-8'))
+    
+    print()
 
     # Receive confirmation with N2
-    encrypted_n2 = conn.recv(1024).decode('utf-8')
-    encrypted_n2 = string_to_list(encrypted_n2)
-    confirmed_n2 = decrypt_message(encrypted_n2, responder_private_key)
-    if confirmed_n2 == n2:
+    encrypted_n2_msg = conn.recv(1024).decode('utf-8')
+    encrypted_n2_msg = string_to_list(encrypted_n2_msg)
+    n2_msg = decrypt_message(encrypted_n2_msg, responder_private_key)
+    if n2_msg == n2:
         print("Handshake complete. Secure channel established.")
     else:
         print("Handshake failed.")
         server_socket.close()
         return
-
+    
+    print()
+    
     # DES Key Exchange
     encrypted_des_key = conn.recv(1024).decode('utf-8')
+    print(f"Encrypted DES Key received: {encrypted_des_key}")
     encrypted_des_key = string_to_list(encrypted_des_key)
     des_key = decrypt_message(encrypted_des_key, responder_private_key)
-    des_key_hex = str(des_key)
-    des = DES(des_key_hex)
-    print("DES Key securely received and decrypted.")
+    print(f"DES Key: {des_key}")
+    des = DES(des_key)
+    
+    print()
 
+    print("Chat:")
     # Secure communication begins
     while True:
         data = conn.recv(1024)
         if not data:
             break
+        
         raw_message = data.decode('utf-8')
+        print("Cipher text received:", raw_message)
+        
         plain_text = des.decryption_cbc(raw_message)
-        print("Text received:", plain_text)
+        print("Plain text:", plain_text)
 
         message = input(" -> ")
         cipher_text = des.encryption_cbc(message, output_format="hex")
