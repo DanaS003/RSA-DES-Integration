@@ -78,13 +78,23 @@ def main():
     
     print()
     
-    # DES Key Exchange
+    print(f"DES key exchange: ")
+    
+    # Encrypted DES key received
     encrypted_des_key = conn.recv(1024).decode('utf-8')
     print(f"Encrypted DES Key received: {encrypted_des_key}")
+    
+    # Decryption using receiver private key
     encrypted_des_key = string_to_list(encrypted_des_key)
-    des_key = decrypt_message(encrypted_des_key, RECEIVER_PRIVATE_KEY)
-    print(f"DES Key: {des_key}")
-    des = DES(des_key)
+    decrypted_des_key1 = decrypt_message(encrypted_des_key, RECEIVER_PRIVATE_KEY)
+    print(f"Decrypted DES Key using receiver private key: {decrypted_des_key1}")
+    
+    # Decryption using sender public key
+    decrypted_des_key1 = string_to_list(decrypted_des_key1)
+    decrypted_des_key2 = decrypt_message(decrypted_des_key1, SENDER_PULBIC_KEY)
+    print(f"Decrypted DES Key using sender public key: {decrypted_des_key2}")
+    print(f"DES Key: {decrypted_des_key2}")
+    des = DES(decrypted_des_key2)
     
     print()
 

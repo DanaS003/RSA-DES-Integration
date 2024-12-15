@@ -73,13 +73,23 @@ def main():
     
     print()
 
-    # DES Key Exchange
+    print(f"DES key exchange: ")
+    
+    # DES Key generate
     des_key = generate_des_key()
     des = DES(des_key)
     print(f"DES Key: {des_key}")
-    encrypted_des_key = encrypt_message(str(des_key), RECEIVER_PUBLIC_KEY)
-    print(f"Encrypted DES Key sent: {encrypted_des_key}")
-    client_socket.sendall(str(encrypted_des_key).encode('utf-8'))
+    
+    # Encryption using sender private key
+    encrypted_des_key1 = encrypt_message(str(des_key), SENDER_PRIVATE_KEY)
+    print(f"Encrypted DES Key using sender private key: {encrypted_des_key1}")
+    
+    # Encryption using 
+    encrypted_des_key2 = encrypt_message(str(encrypted_des_key1), RECEIVER_PUBLIC_KEY)
+    print(f"Encrypted DES Key using public key receiver: {encrypted_des_key2}")
+    
+    # Encrypted DES key sent
+    client_socket.sendall(str(encrypted_des_key2).encode('utf-8'))
 
     print()
     
