@@ -9,7 +9,11 @@
 1. Dana Saputra
    - Algortima DES dari tugas sebelumnya
    - Algoritma RSA
+   - Enkripsi DES key 2 kali
+
 2. Arkan Arsalan Amanullah
    - Public Key Authority
    - Socket
+   - Enkripsi public key dari PKA
+
 
