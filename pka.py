@@ -1,26 +1,19 @@
 import socket
 import threading
-from rsa import generate_key_pair, generate_random_prime
+from rsa import generate_key_pair, generate_random_prime, encrypt_message, decrypt_message
 
 # Key storage
 KEYS = {}
 
+PKA_PRIVATE_KEY = "(44369, 133043)"
+
 def initialize_keys():
     global KEYS
     if not KEYS:
-        # Generate key pairs for initiator and responder
-        p1, q1 = generate_random_prime(10, 1000), generate_random_prime(10, 1000)
-        initiator_private_key, initiator_public_key = generate_key_pair(p1, q1)
-        
-        p2, q2 = generate_random_prime(10, 1000), generate_random_prime(10, 1000)
-        responder_private_key, responder_public_key = generate_key_pair(p2, q2)
-
         # Store keys
         KEYS = {
-            "initiator_private": initiator_private_key,
-            "initiator_public": initiator_public_key,
-            "responder_private": responder_private_key,
-            "responder_public": responder_public_key,
+            "SENDER_PUBLIC_KEY": (49281, 77629),
+            "RECEIVER_PUBLIC_KEY": (797981, 716113),
         }
 
 def handle_client(client_socket):
@@ -30,7 +23,8 @@ def handle_client(client_socket):
         if role in KEYS:
             # Send the public key for the requested role
             public_key = KEYS[role]
-            client_socket.sendall(str(public_key).encode('utf-8'))
+            encrypted_des_key = encrypt_message(str(public_key), PKA_PRIVATE_KEY)
+            client_socket.sendall(str(encrypted_des_key).encode('utf-8'))
         else:
             client_socket.sendall(b"Invalid role")
     except Exception as e:

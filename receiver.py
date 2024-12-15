@@ -4,8 +4,10 @@ from rsa import encrypt_message, decrypt_message
 from helper import string_to_list, generate_random_nonce
 
 
-PKA_HOST = "localhost"  
-PKA_PORT = 6000        
+PKA_HOST = "localhost"
+PKA_PORT = 6000
+PKA_PUBLIC_KEY = "(155729, 133043)"
+RECEIVER_PRIVATE_KEY = "(684821, 716113)"
 
 
 def fetch_key_from_pka(role):
@@ -13,8 +15,11 @@ def fetch_key_from_pka(role):
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect((PKA_HOST, PKA_PORT))
         client_socket.sendall(role.encode('utf-8'))  
-        key = client_socket.recv(1024).decode('utf-8')
-        return key  
+        encrypted_public_key = client_socket.recv(1024).decode('utf-8')
+        encrypted_public_key = string_to_list(encrypted_public_key)
+        print(f"Encrypted sender public key: {encrypted_public_key}")
+        key = decrypt_message(encrypted_public_key, PKA_PUBLIC_KEY)
+        return key 
     finally:
         client_socket.close()
 
@@ -31,11 +36,8 @@ def main():
     print("Connection from:", address)
 
     # Fetch keys from PKA server
-    responder_private_key = fetch_key_from_pka("responder_private")
-    print(f"Responder private key: {responder_private_key}")
-
-    initiator_public_key = fetch_key_from_pka("initiator_public")
-    print(f"Initiator public key: {initiator_public_key}")
+    SENDER_PULBIC_KEY = fetch_key_from_pka("SENDER_PUBLIC_KEY")
+    print(f"Sender public key: {SENDER_PULBIC_KEY}")
     
     print()
 
@@ -46,7 +48,7 @@ def main():
     
     print(f"Encrypted nonce 1 message received: {encrypted_n1_msg}")
     
-    decrypted_n1_msg = decrypt_message(encrypted_n1_msg, responder_private_key)
+    decrypted_n1_msg = decrypt_message(encrypted_n1_msg, RECEIVER_PRIVATE_KEY)
     id_a, n1 = decrypted_n1_msg.split(',')
     
     print(f"Nonce 1 message: {decrypted_n1_msg}")
@@ -57,7 +59,7 @@ def main():
     n2 = generate_random_nonce()
     n1_n2_msg = f"{n1},{n2}"
     print(f"Nonce 1 and 2 message: {n1_n2_msg}")
-    encrypted_n1_n2_msg = encrypt_message(n1_n2_msg, initiator_public_key)
+    encrypted_n1_n2_msg = encrypt_message(n1_n2_msg, SENDER_PULBIC_KEY)
     print(f"Encrypted nonce 1 and 2 message sent: {encrypted_n1_n2_msg}")
     conn.sendall(str(encrypted_n1_n2_msg).encode('utf-8'))
     
@@ -66,7 +68,7 @@ def main():
     # Receive confirmation with N2
     encrypted_n2_msg = conn.recv(1024).decode('utf-8')
     encrypted_n2_msg = string_to_list(encrypted_n2_msg)
-    n2_msg = decrypt_message(encrypted_n2_msg, responder_private_key)
+    n2_msg = decrypt_message(encrypted_n2_msg, RECEIVER_PRIVATE_KEY)
     if n2_msg == n2:
         print("Handshake complete. Secure channel established.")
     else:
@@ -80,7 +82,7 @@ def main():
     encrypted_des_key = conn.recv(1024).decode('utf-8')
     print(f"Encrypted DES Key received: {encrypted_des_key}")
     encrypted_des_key = string_to_list(encrypted_des_key)
-    des_key = decrypt_message(encrypted_des_key, responder_private_key)
+    des_key = decrypt_message(encrypted_des_key, RECEIVER_PRIVATE_KEY)
     print(f"DES Key: {des_key}")
     des = DES(des_key)
     
